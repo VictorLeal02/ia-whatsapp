@@ -2,53 +2,41 @@ const express = require("express");
 const axios = require("axios");
 
 const app = express();
+
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
-
-const INSTANCE_ID = process.env.ZAPI_INSTANCE_ID;
-const TOKEN = process.env.ZAPI_TOKEN;
+const INSTANCE = "3EF2706B104CF2716C3C3A4A6B9BCAE";
+const TOKEN = "0761342768AE2DA4D80F8727";
 
 app.get("/", (req, res) => {
-  res.send("IA InfoeClima online 🚀");
+ res.send("IA InfoClima online 🚀");
 });
 
 app.post("/webhook", async (req, res) => {
 
-  console.log("Mensagem recebida:");
-  console.log(req.body);
+ console.log(req.body);
 
-  try {
+ const mensagem = req.body.text?.message;
+ const telefone = req.body.phone;
 
-    const telefone = req.body.phone;
-    const mensagem = req.body.text?.message;
+ if(mensagem){
 
-    if (!telefone || !mensagem) {
-      return res.sendStatus(200);
-    }
+   await axios.post(
+     `https://api.z-api.io/instances/${INSTANCE}/token/${TOKEN}/send-text`,
+     {
+       phone: telefone,
+       message: "Olá! Recebi: " + mensagem
+     }
+   );
 
-    console.log("Telefone:", telefone);
-    console.log("Mensagem:", mensagem);
+ }
 
-    let resposta = "Olá! 👋\n\nSomos a Info&Clima.\nComo podemos ajudar?\n\n1 - Instalação\n2 - Manutenção\n3 - Orçamento";
+ res.sendStatus(200);
 
-    await axios.post(
-      `https://api.z-api.io/instances/${INSTANCE_ID}/token/${TOKEN}/send-text`,
-      {
-        phone: telefone,
-        message: resposta
-      }
-    );
-
-    console.log("Resposta enviada");
-
-  } catch (erro) {
-    console.log("Erro:", erro.message);
-  }
-
-  res.sendStatus(200);
 });
 
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log("Servidor rodando na porta", PORT);
+ console.log("Servidor rodando na porta", PORT);
 });
