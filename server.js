@@ -6,47 +6,43 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
 
-// DADOS Z-API
+// Z-API
 const INSTANCE_ID = "3EF2706B104CF2716C3C3A4A6B9BCAAE";
 const TOKEN = "0761342768AE2DA4D80F8727";
 
-// WEBHOOK
+// PEGUE NO PAINEL Z-API: Menu esquerdo -> Segurança -> Client-Token
+const CLIENT_TOKEN = "F5cb02add35364af981c7fc7a8161647dS";
+
 app.post("/webhook", async (req, res) => {
+  try {
+    const mensagem = req.body?.text?.message;
+    const telefone = req.body?.phone;
 
-    console.log("Mensagem recebida:");
-
-    const mensagem = req.body.text?.message;
-    const telefone = req.body.phone;
-
+    console.log("Mensagem recebida:", mensagem);
     console.log("Telefone:", telefone);
-    console.log("Mensagem:", mensagem);
 
-    if (!mensagem) {
-        return res.sendStatus(200);
-    }
+    if (!mensagem || !telefone) return res.sendStatus(200);
 
-    try {
+    await axios.post(
+      `https://api.z-api.io/instances/${INSTANCE_ID}/token/${TOKEN}/send-text`,
+      {
+        phone: telefone,
+        message: `Recebi: ${mensagem}`,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "client-token": CLIENT_TOKEN, // <- ESSENCIAL
+        },
+      }
+    );
 
-        await axios.post(
-            `https://api.z-api.io/instances/${INSTANCE_ID}/token/${TOKEN}/send-text`,
-            {
-                phone: telefone,
-                message: "Recebi sua mensagem: " + mensagem
-            }
-        );
-
-        console.log("Resposta enviada");
-
-    } catch (erro) {
-
-        console.log("Erro envio:", erro.response?.data || erro.message);
-
-    }
-
-    res.sendStatus(200);
-
+    console.log("Resposta enviada ✅");
+    return res.sendStatus(200);
+  } catch (err) {
+    console.log("Erro envio:", err.response?.data || err.message);
+    return res.sendStatus(200);
+  }
 });
 
-app.listen(PORT, () => {
-    console.log("Servidor rodando na porta", PORT);
-});
+app.listen(PORT, () => console.log("Servidor rodando na porta", PORT));
