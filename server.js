@@ -4,63 +4,40 @@ const axios = require("axios");
 const app = express();
 app.use(express.json());
 
-// PORTA DO RAILWAY
+app.get("/", (req, res) => {
+  res.send("ONLINE ✅");
+});
+
+// Z-API vai chamar esse endpoint
+app.post("/webhook", async (req, res) => {
+  try {
+    console.log("Webhook recebido:", JSON.stringify(req.body, null, 2));
+
+    // tenta pegar telefone e mensagem de várias formas (porque o payload muda)
+    const phone =
+      req.body?.phone ||
+      req.body?.from ||
+      req.body?.sender?.phone ||
+      req.body?.sender?.id ||
+      "";
+
+    const message =
+      req.body?.text?.message ||
+      req.body?.message ||
+      req.body?.body ||
+      req.body?.text ||
+      "";
+
+    console.log("Telefone:", phone);
+    console.log("Mensagem:", message);
+
+    // responde OK pro Z-API (importante)
+    return res.sendStatus(200);
+  } catch (err) {
+    console.log("Erro webhook:", err?.message || err);
+    return res.sendStatus(200);
+  }
+});
+
 const PORT = process.env.PORT || 3000;
-
-// DADOS DA Z-API (SEUS DADOS)
-const INSTANCE = "3EF2706B104CF2716C3C3A4A6B9BCAE";
-const TOKEN = "0761342768AE2DA4D80F8727";
-
-// WEBHOOK (recebe mensagem do WhatsApp)
-app.post("/", async (req, res) => {
-
-    try {
-
-        console.log("Mensagem recebida:", req.body);
-
-        // Pega telefone
-        const telefone =
-            req.body.phone ||
-            req.body.from ||
-            req.body.sender ||
-            "";
-
-        // Pega mensagem
-        const mensagem =
-            req.body.text?.message ||
-            req.body.message ||
-            "";
-
-        // Limpa telefone
-        const telefoneLimpo = String(telefone).replace(/\D/g, "");
-
-        console.log("Telefone:", telefoneLimpo);
-        console.log("Mensagem:", mensagem);
-
-        if (!telefoneLimpo || !mensagem) {
-            return res.send("OK");
-        }
-
-        // ENVIA RESPOSTA WHATSAPP
-        await axios.post(
-            `https://api.z-api.io/instances/${INSTANCE}/token/${TOKEN}/send-message`,
-            {
-                phone: telefoneLimpo,
-                message: "Olá! Recebi sua mensagem: " + mensagem
-            }
-        );
-
-        res.send("OK");
-
-    } catch (erro) {
-
-        console.log("Erro:", erro.response?.data || erro.message);
-
-        res.send("OK");
-    }
-
-});
-
-app.listen(PORT, () => {
-    console.log("Servidor rodando na porta", PORT);
-});
+app.listen(PORT, () => console.log("Servidor rodando na porta", PORT));
